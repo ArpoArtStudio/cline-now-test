@@ -60,9 +60,13 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-      if (window.innerWidth < 768) {
-        setIsFullScreen(true)
+      try {
+        setIsMobile(window.innerWidth < 768)
+        if (window.innerWidth < 768) {
+          setIsFullScreen(true)
+        }
+      } catch (error) {
+        console.error("Error checking mobile:", error)
       }
     }
     checkMobile()
@@ -299,7 +303,7 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
             ) : (
               <div className="space-y-3">
                 {messages.map((msg) => (
-                  <div key={msg.id} className="space-y-1">
+                  <div key={`${msg.id}-${msg.timestamp.getTime()}`} className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <span
                         className={`text-sm font-medium px-2 py-1 rounded-full ${
