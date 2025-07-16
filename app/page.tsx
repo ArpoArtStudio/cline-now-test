@@ -14,6 +14,13 @@ import EthereumFix from "../components/ethereum-fix"
 import WalletConnectModal from "../components/wallet-connect-modal"
 import ReminderModal from "../components/reminder-modal"
 import NavigationDropdown from "../components/navigation-dropdown"
+import SoldRecentPage from "../components/sold-recent-page"
+import CategoriesPage from "../components/categories-page"
+import AuctionCalendar from "../components/auction-calendar"
+import TeamPage from "../components/team-page"
+import WhyPage from "../components/why-page"
+import ContactPage from "../components/contact-page"
+import TermsPage from "../components/terms-page"
 
 function AuctionSiteContent() {
   const { auctionState, placeBid, setMaxPain, cancelMaxPain, getMinBid, getMaxBid } = useAuction()
@@ -26,6 +33,7 @@ function AuctionSiteContent() {
   const [showMaxPainModal, setShowMaxPainModal] = useState(false)
   const [showWalletModal, setShowWalletModal] = useState(false)
   const [selectedAuctionForReminder, setSelectedAuctionForReminder] = useState<any>(null)
+  const [activePage, setActivePage] = useState<string | null>(null)
 
   const toggleTheme = () => {
     setIsDark(!isDark)
@@ -197,27 +205,35 @@ function AuctionSiteContent() {
                 title="Sold"
                 isDark={isDark}
                 items={[
-                  { label: "Recent", onClick: () => console.log("Recent clicked") },
-                  { label: "Featured Projects", onClick: () => console.log("Featured Projects clicked") },
-                  { label: "Categories", onClick: () => console.log("Categories clicked") },
+                  { label: "Recent", onClick: () => setActivePage("sold-recent") },
+                  { label: "Featured Projects", onClick: () => console.log("Featured Projects - Coming Soon") },
+                  { label: "Categories", onClick: () => setActivePage("categories") },
                 ]}
               />
               <NavigationDropdown
                 title="Next"
                 isDark={isDark}
                 items={[
-                  { label: "Calendar", onClick: () => console.log("Calendar clicked") },
-                  { label: "Whats up next", onClick: () => console.log("Whats up next clicked") },
+                  { label: "Calendar", onClick: () => setActivePage("calendar") },
+                  {
+                    label: "What's Up Next",
+                    onClick: () => {
+                      const upcomingSection = document.getElementById("whats-up-next")
+                      if (upcomingSection) {
+                        upcomingSection.scrollIntoView({ behavior: "smooth" })
+                      }
+                    },
+                  },
                 ]}
               />
               <NavigationDropdown
                 title="About"
                 isDark={isDark}
                 items={[
-                  { label: "Team", onClick: () => console.log("Team clicked") },
-                  { label: "WHY", onClick: () => console.log("WHY clicked") },
-                  { label: "Contact Us", onClick: () => console.log("Contact Us clicked") },
-                  { label: "T&Cs", onClick: () => console.log("T&Cs clicked") },
+                  { label: "Team", onClick: () => setActivePage("team") },
+                  { label: "WHY", onClick: () => setActivePage("why") },
+                  { label: "Contact Us", onClick: () => setActivePage("contact") },
+                  { label: "T&Cs", onClick: () => setActivePage("terms") },
                 ]}
               />
             </div>
@@ -412,11 +428,11 @@ function AuctionSiteContent() {
       </section>
 
       {/* Upcoming Auctions Section */}
-      <section className="py-8 sm:py-12 bg-gray-50 dark:bg-[#000000]">
+      <section id="whats-up-next" className="py-8 sm:py-12 bg-gray-50 dark:bg-[#000000]">
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-white mb-2 sm:mb-4">
-              Upcoming Auctions
+              What's Up Next
             </h2>
           </div>
 
@@ -489,6 +505,15 @@ function AuctionSiteContent() {
           isDark={isDark}
         />
       )}
+
+      {/* Page Modals */}
+      {activePage === "sold-recent" && <SoldRecentPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "categories" && <CategoriesPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "calendar" && <AuctionCalendar onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "team" && <TeamPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "why" && <WhyPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "contact" && <ContactPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      {activePage === "terms" && <TermsPage onClose={() => setActivePage(null)} isDark={isDark} />}
     </div>
   )
 }
