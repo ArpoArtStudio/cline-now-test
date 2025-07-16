@@ -13,6 +13,7 @@ import MaxPainModal from "../components/max-pain-modal"
 import EthereumFix from "../components/ethereum-fix"
 import WalletConnectModal from "../components/wallet-connect-modal"
 import ReminderModal from "../components/reminder-modal"
+import NavigationDropdown from "../components/navigation-dropdown"
 
 function AuctionSiteContent() {
   const { auctionState, placeBid, setMaxPain, cancelMaxPain, getMinBid, getMaxBid } = useAuction()
@@ -188,6 +189,37 @@ function AuctionSiteContent() {
                 <div className="w-4 h-4 bg-white dark:bg-[#000000] rounded-sm"></div>
               </div>
               <span className="text-xl font-bold text-black dark:text-white">Arpo Studio</span>
+            </div>
+
+            {/* Navigation Dropdowns */}
+            <div className="hidden md:flex items-center space-x-6">
+              <NavigationDropdown
+                title="Sold"
+                isDark={isDark}
+                items={[
+                  { label: "Recent", onClick: () => console.log("Recent clicked") },
+                  { label: "Featured Projects", onClick: () => console.log("Featured Projects clicked") },
+                  { label: "Categories", onClick: () => console.log("Categories clicked") },
+                ]}
+              />
+              <NavigationDropdown
+                title="Next"
+                isDark={isDark}
+                items={[
+                  { label: "Calendar", onClick: () => console.log("Calendar clicked") },
+                  { label: "Whats up next", onClick: () => console.log("Whats up next clicked") },
+                ]}
+              />
+              <NavigationDropdown
+                title="About"
+                isDark={isDark}
+                items={[
+                  { label: "Team", onClick: () => console.log("Team clicked") },
+                  { label: "WHY", onClick: () => console.log("WHY clicked") },
+                  { label: "Contact Us", onClick: () => console.log("Contact Us clicked") },
+                  { label: "T&Cs", onClick: () => console.log("T&Cs clicked") },
+                ]}
+              />
             </div>
 
             {/* Right side controls */}
