@@ -4,13 +4,15 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Moon, Sun, Wallet, Clock, TrendingUp, ChevronUp, Settings } from "lucide-react"
+import { Moon, Sun, Wallet, Clock, TrendingUp, Settings } from "lucide-react"
 import ChatButton from "../components/chat-button"
 import AdminPanel from "./admin-panel"
 import { AuctionProvider, useAuction } from "../components/auction-context"
 import BidNotification from "../components/bid-notification"
 import MaxPainModal from "../components/max-pain-modal"
 import EthereumFix from "../components/ethereum-fix"
+import WalletConnectModal from "../components/wallet-connect-modal"
+import ReminderModal from "../components/reminder-modal"
 
 function AuctionSiteContent() {
   const { auctionState, placeBid, setMaxPain, cancelMaxPain, getMinBid, getMaxBid } = useAuction()
@@ -21,6 +23,8 @@ function AuctionSiteContent() {
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null)
   const [showMaxPainModal, setShowMaxPainModal] = useState(false)
+  const [showWalletModal, setShowWalletModal] = useState(false)
+  const [selectedAuctionForReminder, setSelectedAuctionForReminder] = useState<any>(null)
 
   const toggleTheme = () => {
     setIsDark(!isDark)
@@ -31,7 +35,12 @@ function AuctionSiteContent() {
   }
 
   const connectWallet = () => {
-    setConnectedWallet("0xF1Ed4C4cE65B6353B71f2304b3fD7641a436675F")
+    setShowWalletModal(true)
+  }
+
+  const handleWalletConnect = (address: string) => {
+    setConnectedWallet(address)
+    setShowWalletModal(false)
   }
 
   // Check if connected wallet is admin
@@ -132,6 +141,10 @@ function AuctionSiteContent() {
       cancelMaxPain()
     }
     setNotification({ message: "You have opted out of this auction", type: "success" })
+  }
+
+  const handleSetReminder = (auction: any) => {
+    setSelectedAuctionForReminder(auction)
   }
 
   // Update bid amount when current bid changes
@@ -329,60 +342,31 @@ function AuctionSiteContent() {
                     Max Bid (10%) - {getMaxBid().toFixed(2)} ETH
                   </div>
 
-                  {/* Bottom Row */}
-                  <div className="flex items-center space-x-2">
-                    {/* Custom Bid Input - WHITE with BLACK text and BLACK border (ALWAYS) */}
-                    <div className="relative w-16">
-                      <input
-                        type="number"
-                        value={bidAmount.toFixed(1)}
-                        onChange={(e) => {
-                          const value = Number.parseFloat(e.target.value) || auctionState.currentBid * 1.01
-                          setBidAmount(Math.max(auctionState.currentBid * 1.01, value))
-                        }}
-                        style={{
-                          backgroundColor: "#ffffff",
-                          color: "#000000",
-                          border: "2px solid #000000",
-                        }}
-                        className="w-full font-bold py-2 px-2 pr-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        min={auctionState.currentBid * 1.01}
-                        step="0.1"
-                      />
-                      <div className="absolute right-1 top-0 h-full flex items-center">
-                        <button
-                          onClick={incrementBid}
-                          className="p-1 text-black hover:bg-gray-200 rounded"
-                          type="button"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Max Pain Button - BLACK with WHITE text (ALWAYS) */}
+                  {/* Bottom Row - Only Max Pain and I'm Out buttons */}
+                  <div className="flex items-center space-x-3">
+                    {/* Max Pain Button - BLACK with WHITE text and WHITE border */}
                     <div
                       onClick={() => !(isHighestBidder && !hasMaxPainActive) && handleMaxPain()}
-                      className={`rounded-xl py-2 px-4 text-sm font-semibold whitespace-nowrap transition-opacity cursor-pointer ${
+                      className={`flex-1 rounded-xl py-3 text-sm font-semibold text-center transition-opacity cursor-pointer ${
                         isHighestBidder && !hasMaxPainActive ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
                       }`}
                       style={{
                         backgroundColor: hasMaxPainActive ? "#dc2626" : "#000000",
                         color: "#ffffff",
-                        border: "none",
+                        border: "2px solid #ffffff",
                       }}
                     >
                       {hasMaxPainActive ? "Cancel Max Pain" : "Max Pain"}
                     </div>
 
-                    {/* I'm Out, Thanks Button - BLACK with WHITE text (ALWAYS) */}
+                    {/* I'm Out, Thanks Button - BLACK with WHITE text and WHITE border */}
                     <div
                       onClick={handleOptOut}
-                      className="flex-1 font-medium rounded-xl py-2 text-sm transition-opacity cursor-pointer hover:opacity-80 text-center"
+                      className="flex-1 font-semibold rounded-xl py-3 text-sm transition-opacity cursor-pointer hover:opacity-80 text-center"
                       style={{
                         backgroundColor: "#000000",
                         color: "#ffffff",
-                        border: "none",
+                        border: "2px solid #ffffff",
                       }}
                     >
                       I'm Out, Thanks
@@ -440,6 +424,7 @@ function AuctionSiteContent() {
                   </div>
 
                   <Button
+                    onClick={() => handleSetReminder(auction)}
                     variant="outline"
                     className="w-full bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg text-sm"
                   >
@@ -454,6 +439,24 @@ function AuctionSiteContent() {
 
       {/* Chat Button */}
       <ChatButton isDark={isDark} connectedWallet={connectedWallet} />
+
+      {/* Wallet Connect Modal */}
+      {showWalletModal && (
+        <WalletConnectModal
+          onConnect={handleWalletConnect}
+          onCancel={() => setShowWalletModal(false)}
+          isDark={isDark}
+        />
+      )}
+
+      {/* Reminder Modal */}
+      {selectedAuctionForReminder && (
+        <ReminderModal
+          auction={selectedAuctionForReminder}
+          onClose={() => setSelectedAuctionForReminder(null)}
+          isDark={isDark}
+        />
+      )}
     </div>
   )
 }
