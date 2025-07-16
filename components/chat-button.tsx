@@ -9,17 +9,17 @@ import AuctionChat from "./auction-chat"
 interface ChatButtonProps {
   isDark: boolean
   connectedWallet: string
+  currentBid: number
 }
 
-export default function ChatButton({ isDark, connectedWallet }: ChatButtonProps) {
+export default function ChatButton({ isDark, connectedWallet, currentBid }: ChatButtonProps) {
   const [showDisplayNameModal, setShowDisplayNameModal] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [displayName, setDisplayName] = useState("")
 
   const handleChatClick = () => {
     if (!connectedWallet) {
-      // Show notification instead of silent return
-      alert("Please connect your wallet to access chat")
+      alert("Please connect your wallet to join the chat")
       return
     }
 
@@ -67,6 +67,7 @@ export default function ChatButton({ isDark, connectedWallet }: ChatButtonProps)
           connectedWallet={connectedWallet}
           onClose={() => setShowChat(false)}
           isDark={isDark}
+          currentBid={currentBid}
         />
       )}
     </>

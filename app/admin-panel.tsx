@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,12 +22,7 @@ import {
   BarChart3,
   LineChart,
   PieChart,
-  Upload,
-  Calendar,
-  Clock,
 } from "lucide-react"
-
-import { SalesTrendChart, BidActivityChart, UserGrowthChart, VolumeDistributionChart } from "../components/demo-charts"
 
 interface AdminPanelProps {
   onClose: () => void
@@ -37,240 +30,11 @@ interface AdminPanelProps {
   toggleTheme: () => void
 }
 
-const ChatDayModal = ({
-  date,
-  dayName,
-  onClose,
-  isDark,
-}: { date: string; dayName: string; onClose: () => void; isDark: boolean }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-[#000000] border border-black dark:border-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-black dark:text-white">
-            Chat History for {date} ({dayName})
-          </h3>
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Mock Chat Data */}
-        <div className="space-y-4">
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">0x1234...5678</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">14:30:15</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">Great artwork!</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">artlover.eth</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">14:32:20</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">When does bidding end?</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">0x9876...4321</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">09:15:30</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">This is spam content</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState("analytics")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("7d")
   const [showDetailedChart, setShowDetailedChart] = useState<string | null>(null)
-
-  const [newBlockedWord, setNewBlockedWord] = useState("")
-  const [blockedWords, setBlockedWords] = useState(() => {
-    if (typeof window !== "undefined") {
-      const storedWords = localStorage.getItem("blockedWords")
-      return storedWords ? JSON.parse(storedWords) : ["spam", "scam", "hack", "private key", "phishing"]
-    }
-    return ["spam", "scam", "hack", "private key", "phishing"]
-  })
-  const [selectedHistoryDays, setSelectedHistoryDays] = useState<string[]>([])
-  const [selectedChatDay, setSelectedChatDay] = useState<{ date: string; dayName: string } | null>(null)
-
-  // Mint form state
-  const [mintForm, setMintForm] = useState({
-    title: "",
-    description: "",
-    artistName: "",
-    startingPrice: "",
-    royaltyPercent: "",
-    auctionDate: "",
-    auctionTime: "",
-    duration: "7",
-    uploadedImage: null as File | null,
-  })
-
-  const [showMintConfirmation, setShowMintConfirmation] = useState(false)
-
-  // Mock chat history data
-  const chatHistory = [
-    { date: "2024-01-15", dayName: "Today", messageCount: 156, activeUsers: 23, warnings: 2 },
-    { date: "2024-01-14", dayName: "Yesterday", messageCount: 203, activeUsers: 31, warnings: 1 },
-    { date: "2024-01-13", dayName: "2 days ago", messageCount: 178, activeUsers: 28, warnings: 0 },
-    { date: "2024-01-12", dayName: "3 days ago", messageCount: 145, activeUsers: 19, warnings: 3 },
-    { date: "2024-01-11", dayName: "4 days ago", messageCount: 167, activeUsers: 25, warnings: 1 },
-    { date: "2024-01-10", dayName: "5 days ago", messageCount: 134, activeUsers: 22, warnings: 0 },
-    { date: "2024-01-09", dayName: "6 days ago", messageCount: 189, activeUsers: 29, warnings: 2 },
-  ]
-
-  // Mock moderation history
-  const moderationHistory = [
-    {
-      id: 1,
-      userAddress: "0x1234...5678",
-      action: "warned",
-      reason: "Inappropriate language",
-      date: "2024-01-15 14:30",
-      status: "active",
-    },
-    {
-      id: 2,
-      userAddress: "0x9876...4321",
-      action: "restricted",
-      reason: "Spam content",
-      date: "2024-01-14 09:15",
-      status: "blacklisted",
-    },
-    {
-      id: 3,
-      userAddress: "0xABCD...EFGH",
-      action: "warned",
-      reason: "Rate limit exceeded",
-      date: "2024-01-13 16:45",
-      status: "active",
-    },
-  ]
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // Check file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        alert("File size must be less than 10MB")
-        return
-      }
-      setMintForm({ ...mintForm, uploadedImage: file })
-    }
-  }
-
-  const handleMintSubmit = () => {
-    // Validate form
-    if (
-      !mintForm.title ||
-      !mintForm.description ||
-      !mintForm.artistName ||
-      !mintForm.startingPrice ||
-      !mintForm.royaltyPercent ||
-      !mintForm.auctionDate ||
-      !mintForm.auctionTime ||
-      !mintForm.uploadedImage
-    ) {
-      alert("Please fill in all fields and upload an image")
-      return
-    }
-
-    setShowMintConfirmation(true)
-  }
-
-  const confirmMint = () => {
-    // In real app, this would mint the NFT and add to upcoming auctions
-    alert("NFT minted successfully! It will appear in upcoming auctions.")
-    setShowMintConfirmation(false)
-    // Reset form
-    setMintForm({
-      title: "",
-      description: "",
-      artistName: "",
-      startingPrice: "",
-      royaltyPercent: "",
-      auctionDate: "",
-      auctionTime: "",
-      duration: "7",
-      uploadedImage: null,
-    })
-  }
-
-  const addBlockedWord = () => {
-    if (newBlockedWord.trim() && !blockedWords.includes(newBlockedWord.trim().toLowerCase())) {
-      const updatedWords = [...blockedWords, newBlockedWord.trim().toLowerCase()]
-      setBlockedWords(updatedWords)
-      localStorage.setItem("blockedWords", JSON.stringify(updatedWords))
-      setNewBlockedWord("")
-    }
-  }
-
-  const removeBlockedWord = (word: string) => {
-    const updatedWords = blockedWords.filter((w) => w !== word)
-    setBlockedWords(updatedWords)
-    localStorage.setItem("blockedWords", JSON.stringify(updatedWords))
-  }
-
-  const toggleHistorySelection = (date: string) => {
-    setSelectedHistoryDays((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]))
-  }
-
-  const deleteSelectedHistory = () => {
-    if (confirm(`Delete chat history for ${selectedHistoryDays.length} selected days?`)) {
-      alert(`Deleted chat history for ${selectedHistoryDays.length} days`)
-      setSelectedHistoryDays([])
-    }
-  }
-
-  const viewDayHistory = (date: string, dayName: string) => {
-    setSelectedChatDay({ date, dayName })
-  }
-
-  const exportSelectedHistory = () => {
-    if (selectedHistoryDays.length === 0) {
-      alert("Please select days to export")
-      return
-    }
-
-    const csvContent = [
-      "Date,User,Message,Timestamp,Action",
-      ...selectedHistoryDays.flatMap((date) => [
-        `${date},0x1234...5678,Great artwork!,14:30:15,normal`,
-        `${date},artlover.eth,When does bidding end?,14:32:20,normal`,
-        `${date},0x9876...4321,This is spam content,09:15:30,flagged`,
-      ]),
-    ].join("\n")
-
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `chat-history-selected-${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-  }
-
-  const unblacklistUser = (userAddress: string) => {
-    if (confirm(`Unblacklist user ${userAddress}?`)) {
-      alert(`User ${userAddress} has been unblacklisted`)
-    }
-  }
 
   const timeFrames = [
     { key: "7d", label: "7 Days" },
@@ -475,12 +239,17 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
             ))}
           </div>
 
-          {/* Dynamic Chart based on type and timeframe */}
+          {/* Mock Chart Area */}
           <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-8 mb-4">
-            {chartType === "sales" && <SalesTrendChart isDark={isDark} timeFrame={modalTimeFrame} />}
-            {chartType === "bids" && <BidActivityChart isDark={isDark} timeFrame={modalTimeFrame} />}
-            {chartType === "users" && <UserGrowthChart isDark={isDark} timeFrame={modalTimeFrame} />}
-            {chartType === "volume" && <VolumeDistributionChart isDark={isDark} timeFrame={modalTimeFrame} />}
+            <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+              <div className="text-center">
+                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 dark:text-gray-400">
+                  {getChartTitle(chartType)} Chart for {timeFrames.find((f) => f.key === modalTimeFrame)?.label}
+                </p>
+                <p className="text-sm text-gray-400 mt-2">Interactive chart would be rendered here</p>
+              </div>
+            </div>
           </div>
 
           {/* Chart Stats */}
@@ -508,87 +277,6 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
       </div>
     )
   }
-
-  const MintConfirmationModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-[#000000] border border-black dark:border-white rounded-2xl p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-bold text-black dark:text-white mb-4">Confirm Mint</h3>
-        <div className="space-y-3 mb-6">
-          <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Title:</span>
-            <p className="font-semibold text-black dark:text-white">{mintForm.title}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Artist:</span>
-            <p className="font-semibold text-black dark:text-white">{mintForm.artistName}</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Starting Price:</span>
-            <p className="font-semibold text-black dark:text-white">{mintForm.startingPrice} ETH</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Royalty:</span>
-            <p className="font-semibold text-black dark:text-white">{mintForm.royaltyPercent}%</p>
-          </div>
-          <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Auction Start:</span>
-            <p className="font-semibold text-black dark:text-white">
-              {mintForm.auctionDate} at {mintForm.auctionTime}
-            </p>
-          </div>
-        </div>
-        <div className="flex space-x-3">
-          <Button
-            onClick={() => setShowMintConfirmation(false)}
-            variant="outline"
-            className="flex-1 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={confirmMint}
-            className="flex-1 bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg"
-          >
-            Confirm Mint
-          </Button>
-        </div>
-      </div>
-    </div>
-  )
-
-  // Add this useEffect to inject custom CSS
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.textContent = `
-    /* Remove blue colors from date/time inputs */
-    input[type="date"]::-webkit-calendar-picker-indicator,
-    input[type="time"]::-webkit-calendar-picker-indicator {
-      filter: invert(1);
-    }
-    
-    input[type="date"]:focus,
-    input[type="time"]:focus {
-      outline: 2px solid ${isDark ? "#ffffff" : "#000000"};
-      outline-offset: 2px;
-    }
-    
-    /* Custom date/time picker styling */
-    input[type="date"]::-webkit-datetime-edit-fields-wrapper,
-    input[type="time"]::-webkit-datetime-edit-fields-wrapper {
-      background: transparent;
-    }
-    
-    input[type="date"]::-webkit-datetime-edit,
-    input[type="time"]::-webkit-datetime-edit {
-      color: ${isDark ? "#ffffff" : "#000000"};
-    }
-  `
-    document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [isDark])
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? "dark bg-[#000000]" : "bg-white"}`}>
@@ -652,229 +340,7 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
           >
             Chat Management
           </Button>
-          <Button
-            onClick={() => setActiveTab("mint")}
-            className={`${
-              activeTab === "mint"
-                ? "bg-[#000000] dark:bg-white text-white dark:text-[#000000]"
-                : "bg-white dark:bg-[#000000] text-black dark:text-white border border-black dark:border-white"
-            } rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200`}
-          >
-            Mint NFT
-          </Button>
         </div>
-
-        {/* Mint Tab */}
-        {activeTab === "mint" && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-black dark:text-white">Mint New NFT</h2>
-            </div>
-
-            <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-black dark:text-white">Create New Auction</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Upload Art */}
-                <div>
-                  <label className="block text-sm font-medium text-black dark:text-white mb-2">Upload Art</label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center relative">
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {mintForm.uploadedImage ? mintForm.uploadedImage.name : "Click to upload or drag and drop"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    />
-                  </div>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className="block text-lg font-medium text-black dark:text-white mb-2">Title</label>
-                  <Input
-                    value={mintForm.title}
-                    onChange={(e) => setMintForm({ ...mintForm, title: e.target.value })}
-                    placeholder="Enter artwork title"
-                    className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-lg font-medium text-black dark:text-white mb-2">Description</label>
-                  <textarea
-                    value={mintForm.description}
-                    onChange={(e) => setMintForm({ ...mintForm, description: e.target.value })}
-                    placeholder="Describe your artwork"
-                    rows={4}
-                    className="w-full bg-white dark:bg-[#000000] border border-black dark:border-white text-black dark:text-white rounded-lg p-3 text-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
-                  />
-                </div>
-
-                {/* Artist Name */}
-                <div>
-                  <label className="block text-lg font-medium text-black dark:text-white mb-2">Artist Name</label>
-                  <Input
-                    value={mintForm.artistName}
-                    onChange={(e) => setMintForm({ ...mintForm, artistName: e.target.value })}
-                    placeholder="Enter artist name"
-                    className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                  />
-                </div>
-
-                {/* Starting Price and Royalty - Side by Side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-lg font-medium text-black dark:text-white mb-2">
-                      Starting Price (ETH)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={mintForm.startingPrice}
-                      onChange={(e) => setMintForm({ ...mintForm, startingPrice: e.target.value })}
-                      placeholder="0.00"
-                      className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-lg font-medium text-black dark:text-white mb-2">
-                      Royalty % (Future Sales)
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="20"
-                      value={mintForm.royaltyPercent}
-                      onChange={(e) => setMintForm({ ...mintForm, royaltyPercent: e.target.value })}
-                      placeholder="5"
-                      className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                    />
-                  </div>
-                </div>
-
-                {/* Auction Date and Time - Side by Side */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-lg font-medium text-black dark:text-white mb-2">Auction Date</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <Input
-                        type="date"
-                        value={mintForm.auctionDate}
-                        onChange={(e) => setMintForm({ ...mintForm, auctionDate: e.target.value })}
-                        className="pl-10 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-lg font-medium text-black dark:text-white mb-2">
-                      Auction Start Time
-                    </label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <Input
-                        type="time"
-                        value={mintForm.auctionTime}
-                        onChange={(e) => setMintForm({ ...mintForm, auctionTime: e.target.value })}
-                        className="pl-10 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg py-3"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Auction Duration */}
-                <div>
-                  <label className="block text-lg font-medium text-black dark:text-white mb-3">Auction Duration</label>
-
-                  {/* Duration Buttons - Smaller and side by side */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {[
-                      { key: "1h", label: "1H", value: "1h" },
-                      { key: "6h", label: "6H", value: "6h" },
-                      { key: "12h", label: "12H", value: "12h" },
-                      { key: "24h", label: "1D", value: "24h" },
-                      { key: "48h", label: "2D", value: "48h" },
-                      { key: "72h", label: "3D", value: "72h" },
-                    ].map((duration) => (
-                      <Button
-                        key={duration.key}
-                        onClick={() => setMintForm({ ...mintForm, duration: duration.value })}
-                        className={`${
-                          mintForm.duration === duration.value
-                            ? "bg-[#000000] dark:bg-white text-white dark:text-[#000000]"
-                            : "bg-white dark:bg-[#000000] text-black dark:text-white border border-black dark:border-white"
-                        } rounded-lg px-3 py-1 text-sm font-medium min-w-[50px]`}
-                      >
-                        {duration.label}
-                      </Button>
-                    ))}
-                  </div>
-
-                  {/* Custom Duration Input */}
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                    <label className="block text-base font-medium text-black dark:text-white mb-2">
-                      Or Set Custom Duration
-                    </label>
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="3"
-                          placeholder="0"
-                          className="w-16 text-center bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg font-bold py-2"
-                        />
-                        <span className="text-lg font-medium text-black dark:text-white">Days</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="23"
-                          placeholder="0"
-                          className="w-16 text-center bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg font-bold py-2"
-                        />
-                        <span className="text-lg font-medium text-black dark:text-white">Hours</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          type="number"
-                          min="1"
-                          max="59"
-                          placeholder="1"
-                          className="w-16 text-center bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg text-lg font-bold py-2"
-                        />
-                        <span className="text-lg font-medium text-black dark:text-white">Minutes</span>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      Maximum duration: 3 days. Minimum duration: 1 minute.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Mint Button */}
-                <div className="pt-4">
-                  <Button
-                    onClick={handleMintSubmit}
-                    className="w-full bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg py-3 text-lg font-semibold"
-                  >
-                    MINT NOW
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Analytics Tab */}
         {activeTab === "analytics" && (
@@ -987,12 +453,12 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
               </Card>
             </div>
 
-            {/* Detailed Charts Section - NOW DYNAMIC */}
+            {/* Detailed Charts Section */}
             <div className="space-y-6">
               <h3 className="text-xl font-bold text-black dark:text-white">Detailed Analytics</h3>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Sales Chart - Now updates with timeFrame */}
+                {/* Sales Chart */}
                 <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
                   <CardHeader>
                     <CardTitle className="text-black dark:text-white flex items-center">
@@ -1001,11 +467,18 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <SalesTrendChart isDark={isDark} timeFrame={selectedTimeFrame} />
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="text-center">
+                        <LineChart className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          Sales trend chart for {timeFrames.find((f) => f.key === selectedTimeFrame)?.label}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Bid Activity Chart - Now updates with timeFrame */}
+                {/* Bid Activity Chart */}
                 <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
                   <CardHeader>
                     <CardTitle className="text-black dark:text-white flex items-center">
@@ -1014,11 +487,18 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <BidActivityChart isDark={isDark} timeFrame={selectedTimeFrame} />
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="text-center">
+                        <BarChart3 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          Bid activity chart for {timeFrames.find((f) => f.key === selectedTimeFrame)?.label}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* User Growth Chart - Now updates with timeFrame */}
+                {/* User Growth Chart */}
                 <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
                   <CardHeader>
                     <CardTitle className="text-black dark:text-white flex items-center">
@@ -1027,11 +507,18 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <UserGrowthChart isDark={isDark} timeFrame={selectedTimeFrame} />
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="text-center">
+                        <TrendingUp className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          User growth chart for {timeFrames.find((f) => f.key === selectedTimeFrame)?.label}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Volume Distribution - Now updates with timeFrame */}
+                {/* Volume Distribution */}
                 <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
                   <CardHeader>
                     <CardTitle className="text-black dark:text-white flex items-center">
@@ -1040,7 +527,14 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <VolumeDistributionChart isDark={isDark} timeFrame={selectedTimeFrame} />
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-6 h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="text-center">
+                        <PieChart className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          Volume distribution for {timeFrames.find((f) => f.key === selectedTimeFrame)?.label}
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1139,22 +633,9 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-black dark:text-white">Chat Management</h2>
               <div className="flex space-x-2">
-                {selectedHistoryDays.length > 0 && (
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={exportSelectedHistory}
-                      className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg"
-                    >
-                      Export Selected ({selectedHistoryDays.length})
-                    </Button>
-                    <Button
-                      onClick={deleteSelectedHistory}
-                      className="bg-red-600 text-white hover:bg-red-700 rounded-lg"
-                    >
-                      Delete Selected ({selectedHistoryDays.length})
-                    </Button>
-                  </div>
-                )}
+                <Button className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg">
+                  Export Chat History
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <Input
@@ -1201,144 +682,59 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
               <CardContent>
                 <div className="flex space-x-2 mb-4">
                   <Input
-                    value={newBlockedWord}
-                    onChange={(e) => setNewBlockedWord(e.target.value)}
                     placeholder="Add new blocked word..."
                     className="flex-1 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg"
                   />
-                  <Button
-                    onClick={addBlockedWord}
-                    className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg"
-                  >
+                  <Button className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg">
                     Add Word
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {blockedWords.map((word) => (
+                  {["spam", "scam", "hack", "private key", "phishing"].map((word) => (
                     <Badge key={word} className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white rounded-lg">
                       {word}
-                      <button onClick={() => removeBlockedWord(word)} className="ml-2 text-red-500 hover:text-red-700">
-                        ×
-                      </button>
+                      <button className="ml-2 text-red-500 hover:text-red-700">×</button>
                     </Badge>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* 7-Day Chat History */}
+            {/* Recent Chat Messages */}
             <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-black dark:text-white flex items-center justify-between">
-                  <span>Chat History (Last 7 Days)</span>
-                  {selectedHistoryDays.length > 0 && (
-                    <Button
-                      onClick={deleteSelectedHistory}
-                      className="bg-red-600 text-white hover:bg-red-700 rounded-lg text-sm"
-                    >
-                      Delete Selected ({selectedHistoryDays.length})
-                    </Button>
-                  )}
-                </CardTitle>
+                <CardTitle className="text-black dark:text-white">Recent Messages (Last 24h)</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {chatHistory.map((day) => (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {[
+                    { user: "0x1234...5678", message: "Great artwork!", time: "2 min ago", status: "normal" },
+                    { user: "artlover.eth", message: "When does bidding end?", time: "5 min ago", status: "normal" },
+                    { user: "0x9876...4321", message: "This is spam content", time: "10 min ago", status: "flagged" },
+                  ].map((msg, index) => (
                     <div
-                      key={day.date}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedHistoryDays.includes(day.date)
-                          ? "bg-blue-100 dark:bg-blue-900 border-blue-500"
-                          : "bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      }`}
+                      key={index}
+                      className={`p-3 rounded-lg ${msg.status === "flagged" ? "bg-red-100 dark:bg-red-900" : "bg-gray-50 dark:bg-gray-900"}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedHistoryDays.includes(day.date)}
-                            onChange={() => toggleHistorySelection(day.date)}
-                            className="w-4 h-4"
-                          />
-                          <div onClick={() => viewDayHistory(day.date, day.dayName)} className="flex-1 hover:underline">
-                            <div className="font-semibold text-black dark:text-white">
-                              {day.date} ({day.dayName})
-                            </div>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
-                              {day.messageCount} messages • {day.activeUsers} active users
-                            </div>
-                          </div>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-mono text-sm font-bold text-black dark:text-white">{msg.user}</span>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{msg.message}</p>
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {day.warnings > 0 && <span className="text-red-500">{day.warnings} warnings</span>}
-                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{msg.time}</div>
                       </div>
+                      {msg.status === "flagged" && (
+                        <div className="mt-2 flex space-x-2">
+                          <Button size="sm" className="bg-red-600 text-white hover:bg-red-700 rounded text-xs">
+                            Delete
+                          </Button>
+                          <Button size="sm" className="bg-yellow-600 text-white hover:bg-yellow-700 rounded text-xs">
+                            Warn User
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* User Moderation Table */}
-            <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-black dark:text-white">User Moderation History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-300 dark:border-gray-600">
-                        <th className="text-left p-3 text-black dark:text-white">User</th>
-                        <th className="text-left p-3 text-black dark:text-white">Action</th>
-                        <th className="text-left p-3 text-black dark:text-white">Reason</th>
-                        <th className="text-left p-3 text-black dark:text-white">Date</th>
-                        <th className="text-left p-3 text-black dark:text-white">Status</th>
-                        <th className="text-left p-3 text-black dark:text-white">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {moderationHistory.map((record) => (
-                        <tr key={record.id} className="border-b border-gray-200 dark:border-gray-700">
-                          <td className="p-3 font-mono text-sm text-black dark:text-white">{record.userAddress}</td>
-                          <td className="p-3">
-                            <Badge
-                              className={`${
-                                record.action === "warned"
-                                  ? "bg-yellow-500 text-white"
-                                  : record.action === "restricted"
-                                    ? "bg-red-500 text-white"
-                                    : "bg-gray-500 text-white"
-                              } rounded-lg`}
-                            >
-                              {record.action}
-                            </Badge>
-                          </td>
-                          <td className="p-3 text-sm text-gray-700 dark:text-gray-300">{record.reason}</td>
-                          <td className="p-3 text-sm text-gray-600 dark:text-gray-400">{record.date}</td>
-                          <td className="p-3">
-                            <Badge
-                              className={`${
-                                record.status === "active" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-                              } rounded-lg`}
-                            >
-                              {record.status}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
-                            {record.status === "blacklisted" && (
-                              <Button
-                                onClick={() => unblacklistUser(record.userAddress)}
-                                className="bg-green-600 text-white hover:bg-green-700 rounded-lg text-xs px-3 py-1"
-                              >
-                                Unblacklist
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </CardContent>
             </Card>
@@ -1348,17 +744,6 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
 
       {/* Chart Modal */}
       {showDetailedChart && <ChartModal chartType={showDetailedChart} onClose={() => setShowDetailedChart(null)} />}
-
-      {/* Mint Confirmation Modal */}
-      {showMintConfirmation && <MintConfirmationModal />}
-      {selectedChatDay && (
-        <ChatDayModal
-          date={selectedChatDay.date}
-          dayName={selectedChatDay.dayName}
-          onClose={() => setSelectedChatDay(null)}
-          isDark={isDark}
-        />
-      )}
     </div>
   )
 }

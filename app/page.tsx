@@ -4,36 +4,16 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Moon, Sun, Wallet, Clock, TrendingUp, Settings } from "lucide-react"
+import { Moon, Sun, Wallet, Clock, Users, TrendingUp, ChevronUp } from "lucide-react"
 import ChatButton from "../components/chat-button"
-import AdminPanel from "./admin-panel"
-import { AuctionProvider, useAuction } from "../components/auction-context"
-import BidNotification from "../components/bid-notification"
-import MaxPainModal from "../components/max-pain-modal"
-import EthereumFix from "../components/ethereum-fix"
-import WalletConnectModal from "../components/wallet-connect-modal"
-import ReminderModal from "../components/reminder-modal"
-import NavigationDropdown from "../components/navigation-dropdown"
-import SoldRecentPage from "../components/sold-recent-page"
-import CategoriesPage from "../components/categories-page"
-import AuctionCalendar from "../components/auction-calendar"
-import TeamPage from "../components/team-page"
-import WhyPage from "../components/why-page"
-import ContactPage from "../components/contact-page"
-import TermsPage from "../components/terms-page"
 
-function AuctionSiteContent() {
-  const { auctionState, placeBid, setMaxPain, cancelMaxPain, getMinBid, getMaxBid } = useAuction()
+export default function AuctionSite() {
   const [isDark, setIsDark] = useState(false)
+  const [currentBid, setCurrentBid] = useState(1.1)
   const [bidAmount, setBidAmount] = useState(2.2)
   const [timeLeft] = useState({ days: 2, hours: 1, minutes: 57, seconds: 12 })
+  const [isHighestBidder] = useState(false)
   const [connectedWallet, setConnectedWallet] = useState("")
-  const [showAdminPanel, setShowAdminPanel] = useState(false)
-  const [notification, setNotification] = useState<{ message: string; type: "success" | "error" } | null>(null)
-  const [showMaxPainModal, setShowMaxPainModal] = useState(false)
-  const [showWalletModal, setShowWalletModal] = useState(false)
-  const [selectedAuctionForReminder, setSelectedAuctionForReminder] = useState<any>(null)
-  const [activePage, setActivePage] = useState<string | null>(null)
 
   const toggleTheme = () => {
     setIsDark(!isDark)
@@ -44,23 +24,8 @@ function AuctionSiteContent() {
   }
 
   const connectWallet = () => {
-    setShowWalletModal(true)
+    setConnectedWallet("0xF1Ed4C4cE65B6353B71f2304b3fD7641a436675F")
   }
-
-  const handleWalletConnect = (address: string) => {
-    setConnectedWallet(address)
-    setShowWalletModal(false)
-  }
-
-  // Check if connected wallet is admin
-  const isAdmin = connectedWallet === "0xF1Ed4C4cE65B6353B71f2304b3fD7641a436675F"
-
-  // Check if user is highest bidder
-  const isHighestBidder = auctionState.highestBidder === connectedWallet
-
-  // Check if user has Max Pain active
-  const hasMaxPainActive =
-    auctionState.maxPainSettings?.isActive && auctionState.maxPainSettings.bidder === connectedWallet
 
   const upcomingAuctions = [
     {
@@ -86,110 +51,25 @@ function AuctionSiteContent() {
     },
   ]
 
-  const handleBid = (bidType: "min" | "max" | "custom") => {
-    if (!connectedWallet) {
-      setNotification({ message: "Please connect your wallet to bid", type: "error" })
-      return
-    }
-
-    try {
-      let amount: number
-
-      switch (bidType) {
-        case "min":
-          amount = getMinBid()
-          break
-        case "max":
-          amount = getMaxBid()
-          break
-        case "custom":
-          amount = bidAmount
-          break
-      }
-
-      placeBid(amount, connectedWallet)
-      setNotification({
-        message: `Bid placed successfully: ${amount.toFixed(2)} ETH`,
-        type: "success",
-      })
-    } catch (error) {
-      setNotification({
-        message: error instanceof Error ? error.message : "Failed to place bid",
-        type: "error",
-      })
-    }
-  }
-
-  const handleMaxPain = () => {
-    if (!connectedWallet) {
-      setNotification({ message: "Please connect your wallet to use Max Pain", type: "error" })
-      return
-    }
-
-    if (hasMaxPainActive) {
-      // Cancel existing Max Pain
-      cancelMaxPain()
-      setNotification({ message: "Max Pain cancelled", type: "success" })
-    } else {
-      // Show Max Pain modal
-      setShowMaxPainModal(true)
-    }
-  }
-
-  const handleMaxPainConfirm = (maxAmount: number) => {
-    setMaxPain(maxAmount, connectedWallet)
-    setShowMaxPainModal(false)
-    setNotification({
-      message: `Max Pain activated up to ${maxAmount.toFixed(2)} ETH`,
-      type: "success",
-    })
-  }
-
-  const handleOptOut = () => {
-    if (hasMaxPainActive) {
-      cancelMaxPain()
-    }
-    setNotification({ message: "You have opted out of this auction", type: "success" })
-  }
-
-  const handleSetReminder = (auction: any) => {
-    setSelectedAuctionForReminder(auction)
-  }
-
-  // Update bid amount when current bid changes
+  // ---------------------------------------------------------------------------
+  // Guard against "Cannot redefine property: ethereum"
+  // Only create a mock if no wallet provider has injected one yet.
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    setBidAmount(Math.max(bidAmount, auctionState.currentBid * 1.01))
-  }, [auctionState.currentBid, bidAmount])
-
-  if (showAdminPanel) {
-    return <AdminPanel onClose={() => setShowAdminPanel(false)} isDark={isDark} toggleTheme={toggleTheme} />
-  }
+    if (typeof window !== "undefined" && (window as any).ethereum === undefined) {
+      Object.defineProperty(window, "ethereum", {
+        value: {}, // light stub – extend as needed
+        writable: false,
+        configurable: false,
+      })
+    }
+  }, [])
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? "dark bg-[#000000]" : "bg-white"}`}>
-      {/* Notification */}
-      {notification && (
-        <BidNotification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-          isDark={isDark}
-        />
-      )}
-
-      {/* Max Pain Modal */}
-      {showMaxPainModal && (
-        <MaxPainModal
-          onConfirm={handleMaxPainConfirm}
-          onCancel={() => setShowMaxPainModal(false)}
-          currentBid={auctionState.currentBid}
-          isDark={isDark}
-        />
-      )}
-
       {/* Header */}
       <header className="border-b border-gray-300 dark:border-white bg-white dark:bg-[#000000]">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
@@ -199,57 +79,8 @@ function AuctionSiteContent() {
               <span className="text-xl font-bold text-black dark:text-white">Arpo Studio</span>
             </div>
 
-            {/* Navigation Dropdowns */}
-            <div className="hidden md:flex items-center space-x-6">
-              <NavigationDropdown
-                title="Sold"
-                isDark={isDark}
-                items={[
-                  { label: "Recent", onClick: () => setActivePage("sold-recent") },
-                  { label: "Featured Projects", onClick: () => console.log("Featured Projects - Coming Soon") },
-                  { label: "Categories", onClick: () => setActivePage("categories") },
-                ]}
-              />
-              <NavigationDropdown
-                title="Next"
-                isDark={isDark}
-                items={[
-                  { label: "Calendar", onClick: () => setActivePage("calendar") },
-                  {
-                    label: "What's Up Next",
-                    onClick: () => {
-                      const upcomingSection = document.getElementById("whats-up-next")
-                      if (upcomingSection) {
-                        upcomingSection.scrollIntoView({ behavior: "smooth" })
-                      }
-                    },
-                  },
-                ]}
-              />
-              <NavigationDropdown
-                title="About"
-                isDark={isDark}
-                items={[
-                  { label: "Team", onClick: () => setActivePage("team") },
-                  { label: "WHY", onClick: () => setActivePage("why") },
-                  { label: "Contact Us", onClick: () => setActivePage("contact") },
-                  { label: "T&Cs", onClick: () => setActivePage("terms") },
-                ]}
-              />
-            </div>
-
             {/* Right side controls */}
             <div className="flex items-center space-x-4">
-              {isAdmin && (
-                <Button
-                  onClick={() => setShowAdminPanel(true)}
-                  variant="outline"
-                  size="sm"
-                  className="p-2 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -260,7 +91,7 @@ function AuctionSiteContent() {
               </Button>
               <Button
                 onClick={connectWallet}
-                className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-[#333333] dark:hover:bg-[#cccccc] border-[#000000] dark:border-white rounded-lg"
+                className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg"
               >
                 <Wallet className="h-4 w-4 mr-2" />
                 {connectedWallet ? `${connectedWallet.slice(0, 6)}...${connectedWallet.slice(-4)}` : "Connect Wallet"}
@@ -271,154 +102,151 @@ function AuctionSiteContent() {
       </header>
 
       {/* Live Auction Section */}
-      <section className="bg-white dark:bg-[#000000] min-h-[calc(100vh-64px)]">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full py-6">
-            {/* Artwork Image - Takes up 2/3 of the width */}
-            <div className="lg:col-span-2 flex justify-center items-center">
-              <div className="relative w-full h-full max-h-[calc(100vh-120px)]">
+      <section className="py-6 bg-white dark:bg-[#000000]">
+        <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 items-start">
+            {/* Artwork Image - Takes up 3/4 of the width on large screens */}
+            <div className="lg:col-span-3 flex justify-center">
+              <div className="relative w-full max-w-4xl">
                 <img
-                  src="/placeholder.svg?height=700&width=900&text=Digital Dreams: Neon Cityscape"
+                  src="/placeholder.svg?height=600&width=800&text=Digital Dreams: Neon Cityscape"
                   alt="Digital Dreams: Neon Cityscape"
-                  className="w-full h-full object-cover rounded-2xl shadow-2xl border border-black dark:border-white"
+                  className="w-full h-auto object-cover rounded-2xl shadow-2xl border border-black dark:border-white"
                 />
                 <Badge className="absolute top-4 left-4 bg-black dark:bg-white text-white dark:text-black border border-white dark:border-black rounded-lg">
                   <div className="w-2 h-2 bg-white dark:bg-black rounded-full mr-2 animate-pulse"></div>
                   Live
                 </Badge>
-                {hasMaxPainActive && (
-                  <Badge className="absolute top-4 right-4 bg-red-600 text-white border border-white rounded-lg">
-                    Max Pain Active
-                  </Badge>
-                )}
               </div>
             </div>
 
-            {/* Auction Details - Takes up 1/3 of the width */}
+            {/* Auction Details - Takes up 1/4 of the width on large screens */}
             <div className="lg:col-span-1 w-full">
-              <div className="bg-white dark:bg-[#000000] rounded-2xl p-6 border border-[#000000] dark:border-white h-full flex flex-col">
-                {/* Title Section */}
+              <div className="bg-gray-100 dark:bg-[#000000] rounded-2xl p-4 border border-[#000000] dark:border-white h-fit flex flex-col">
+                {/* Title Section - Bigger and Bold */}
                 <div className="mb-4">
-                  <h1 className="text-2xl font-bold text-black dark:text-white mb-1 leading-tight">
+                  <h2 className="text-2xl font-black text-black dark:text-white mb-2">
                     Digital Dreams: Neon Cityscape
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400">by FutureMuse</p>
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">by FutureMuse</p>
                 </div>
 
-                {/* About Section */}
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-black dark:text-white mb-3">About this piece</h2>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                {/* About Section - Medium Size */}
+                <div className="mb-4">
+                  <p className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">About this piece</p>
+                  <p className="text-base text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                     A stunning piece that encapsulates a futuristic neon cityscape with digital cores and cosmic
                     spirits.
                   </p>
-                </div>
 
-                {/* Current Bid Section */}
-                <div className="mb-6">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current bid</p>
-                  <p className="text-3xl font-bold text-black dark:text-white">
-                    {auctionState.currentBid.toFixed(2)} ETH
-                  </p>
-                </div>
-
-                {/* Countdown Section */}
-                <div className="rounded-lg p-4 mb-6 bg-white">
-                  <div className="flex items-center justify-center mb-3">
-                    <Clock className="h-4 w-4 mr-2 text-black" />
-                    <span className="text-sm text-black">Auction ending in</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="flex space-x-6">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-black">{timeLeft.days.toString().padStart(2, "0")}</div>
-                        <div className="text-xs text-black mt-1">Days</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-black">
-                          {timeLeft.hours.toString().padStart(2, "0")}
-                        </div>
-                        <div className="text-xs text-black mt-1">Hours</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-black">
-                          {timeLeft.minutes.toString().padStart(2, "0")}
-                        </div>
-                        <div className="text-xs text-black mt-1">Minutes</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-black">
-                          {timeLeft.seconds.toString().padStart(2, "0")}
-                        </div>
-                        <div className="text-xs text-black mt-1">Seconds</div>
-                      </div>
+                  {/* Auction Details Grid */}
+                  <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Edition:</span>
+                      <div className="font-semibold text-black dark:text-white">1 of 1</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Category:</span>
+                      <div className="font-semibold text-black dark:text-white">Digital Art</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Created:</span>
+                      <div className="font-semibold text-black dark:text-white">2024</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Size:</span>
+                      <div className="font-semibold text-black dark:text-white">4K Resolution</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Bidding Section - EXACT MATCH TO SCREENSHOTS */}
-                <div className="space-y-3 flex-1 flex flex-col justify-end">
-                  {/* Min Bid Button - BLACK with WHITE text and WHITE border (ALWAYS) */}
-                  <div
-                    onClick={() => !isHighestBidder && handleBid("min")}
-                    className={`w-full py-4 rounded-xl text-sm font-medium flex items-center justify-center cursor-pointer transition-opacity ${
-                      isHighestBidder ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
-                    }`}
-                    style={{
-                      backgroundColor: "#000000",
-                      color: "#ffffff",
-                      border: "2px solid #ffffff",
-                    }}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Min Bid (1%) - {getMinBid().toFixed(2)} ETH
+                {/* Current Bid Section - Bold Price */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Current Bid</span>
+                    <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
+                      <Users className="h-4 w-4" />
+                      <span>24 bidders</span>
+                    </div>
                   </div>
+                  <div className="text-2xl font-black text-black dark:text-white mb-3">{currentBid.toFixed(1)} ETH</div>
 
-                  {/* Max Bid Button - WHITE with BLACK text and BLACK border (ALWAYS) */}
-                  <div
-                    onClick={() => !isHighestBidder && handleBid("max")}
-                    className={`w-full py-4 rounded-xl text-sm font-medium flex items-center justify-center cursor-pointer transition-opacity ${
-                      isHighestBidder ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
-                    }`}
-                    style={{
-                      backgroundColor: "#ffffff",
-                      color: "#000000",
-                      border: "2px solid #000000",
-                    }}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Max Bid (10%) - {getMaxBid().toFixed(2)} ETH
+                  {isHighestBidder && (
+                    <div className="text-sm text-green-600 dark:text-green-400 mb-3">You are the highest bidder</div>
+                  )}
+                </div>
+
+                {/* Countdown Timer - Centered Numbers */}
+                <div className="mb-5">
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: "Days", value: timeLeft.days },
+                      { label: "Hours", value: timeLeft.hours },
+                      { label: "Minutes", value: timeLeft.minutes },
+                      { label: "Seconds", value: timeLeft.seconds },
+                    ].map((item, index) => (
+                      <div key={index} className="text-center">
+                        <div className="bg-white dark:bg-[#000000] rounded-lg p-4 shadow-sm border border-[#000000] dark:border-white flex items-center justify-center">
+                          <div className="text-xl font-black text-[#000000] dark:text-white">
+                            {item.value.toString().padStart(2, "0")}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">{item.label}</div>
+                      </div>
+                    ))}
                   </div>
+                </div>
 
-                  {/* Bottom Row - Only Max Pain and I'm Out buttons */}
-                  <div className="flex items-center space-x-3">
-                    {/* Max Pain Button - BLACK with WHITE text and WHITE border */}
-                    <div
-                      onClick={() => !(isHighestBidder && !hasMaxPainActive) && handleMaxPain()}
-                      className={`flex-1 rounded-xl py-3 text-sm font-semibold text-center transition-opacity cursor-pointer ${
-                        isHighestBidder && !hasMaxPainActive ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
-                      }`}
-                      style={{
-                        backgroundColor: hasMaxPainActive ? "#dc2626" : "#000000",
-                        color: "#ffffff",
-                        border: "2px solid #ffffff",
-                      }}
-                    >
-                      {hasMaxPainActive ? "Cancel Max Pain" : "Max Pain"}
+                {/* Bidding Section */}
+                <div className="space-y-4">
+                  {/* Min and Max Bid buttons */}
+                  <Button className="w-full bg-[#000000] dark:bg-[#000000] text-white border border-white py-4 rounded-lg hover:bg-gray-800 text-sm">
+                    <TrendingUp className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span>Min Bid (1%) - {(currentBid * 1.01).toFixed(2)} ETH</span>
+                  </Button>
+
+                  <Button className="w-full bg-white dark:bg-white text-black border border-black py-4 rounded-lg hover:bg-gray-100 text-sm">
+                    <TrendingUp className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span>Max Bid (10%) - {(currentBid * 1.1).toFixed(2)} ETH</span>
+                  </Button>
+
+                  {/* Custom Bid Section - Aligned Max Pain and Input */}
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 relative">
+                        <input
+                          type="number"
+                          value={bidAmount.toFixed(1)}
+                          onChange={(e) => {
+                            const value = Number.parseFloat(e.target.value) || currentBid * 2
+                            setBidAmount(Math.max(currentBid * 2, value))
+                          }}
+                          className="w-full bg-white dark:bg-[#000000] border border-black dark:border-white text-black dark:text-white font-bold py-4 px-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          min={currentBid * 2}
+                          step="0.1"
+                        />
+                        <div className="absolute right-2 top-0 h-full flex items-center">
+                          <button
+                            onClick={incrementBid}
+                            className="p-2 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-800 rounded"
+                            type="button"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <Button
+                        className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] rounded-lg border border-[#000000] dark:border-white hover:bg-gray-800 dark:hover:bg-gray-200 py-4 px-6 text-sm font-semibold whitespace-nowrap h-[56px]"
+                        disabled={isHighestBidder}
+                      >
+                        Max Pain
+                      </Button>
                     </div>
 
-                    {/* I'm Out, Thanks Button - BLACK with WHITE text and WHITE border */}
-                    <div
-                      onClick={handleOptOut}
-                      className="flex-1 font-semibold rounded-xl py-3 text-sm transition-opacity cursor-pointer hover:opacity-80 text-center"
-                      style={{
-                        backgroundColor: "#000000",
-                        color: "#ffffff",
-                        border: "2px solid #ffffff",
-                      }}
-                    >
+                    <Button className="w-full bg-white dark:bg-[#000000] text-black dark:text-white border border-black dark:border-white font-semibold rounded-lg hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black py-4 text-sm">
                       I'm Out, Thanks
-                    </div>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -428,15 +256,17 @@ function AuctionSiteContent() {
       </section>
 
       {/* Upcoming Auctions Section */}
-      <section id="whats-up-next" className="py-8 sm:py-12 bg-gray-50 dark:bg-[#000000]">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-6 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-black dark:text-white mb-2 sm:mb-4">
-              What's Up Next
-            </h2>
+      <section className="py-12 bg-gray-50 dark:bg-[#000000]">
+        <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-black dark:text-white mb-4">Upcoming Auctions</h2>
+            <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
+              Discover extraordinary digital artworks scheduled for upcoming auctions. Get ready to bid on the next wave
+              of digital masterpieces.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {upcomingAuctions.map((auction) => (
               <Card
                 key={auction.id}
@@ -446,35 +276,32 @@ function AuctionSiteContent() {
                   <img
                     src="/placeholder.svg?height=300&width=400&text=NFT Artwork"
                     alt={auction.title}
-                    className="w-full h-48 sm:h-64 object-cover border-b border-black dark:border-white"
+                    className="w-full h-64 object-cover border-b border-black dark:border-white"
                   />
-                  <Badge className="absolute top-3 right-3 bg-black dark:bg-white text-white dark:text-black border border-white dark:border-black rounded-lg text-xs">
+                  <Badge className="absolute top-3 right-3 bg-black dark:bg-white text-white dark:text-black border border-white dark:border-black rounded-lg">
                     Upcoming
                   </Badge>
                 </div>
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-black dark:text-white mb-2 leading-tight">
-                    {auction.title}
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-4">by {auction.artist}</p>
+                <CardContent className="p-6">
+                  <h3 className="text-xl font-bold text-black dark:text-white mb-2">{auction.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">by {auction.artist}</p>
 
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Starting Bid</p>
-                      <p className="text-base sm:text-lg font-bold text-black dark:text-white">{auction.startingBid}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Starting Bid</p>
+                      <p className="text-lg font-bold text-black dark:text-white">{auction.startingBid}</p>
                     </div>
                     <div className="text-right">
-                      <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                        <span className="whitespace-nowrap">{auction.status}</span>
+                      <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {auction.status}
                       </div>
                     </div>
                   </div>
 
                   <Button
-                    onClick={() => handleSetReminder(auction)}
                     variant="outline"
-                    className="w-full bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg text-sm"
+                    className="w-full bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
                   >
                     Set Reminder
                   </Button>
@@ -486,44 +313,7 @@ function AuctionSiteContent() {
       </section>
 
       {/* Chat Button */}
-      <ChatButton isDark={isDark} connectedWallet={connectedWallet} />
-
-      {/* Wallet Connect Modal */}
-      {showWalletModal && (
-        <WalletConnectModal
-          onConnect={handleWalletConnect}
-          onCancel={() => setShowWalletModal(false)}
-          isDark={isDark}
-        />
-      )}
-
-      {/* Reminder Modal */}
-      {selectedAuctionForReminder && (
-        <ReminderModal
-          auction={selectedAuctionForReminder}
-          onClose={() => setSelectedAuctionForReminder(null)}
-          isDark={isDark}
-        />
-      )}
-
-      {/* Page Modals */}
-      {activePage === "sold-recent" && <SoldRecentPage onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "categories" && <CategoriesPage onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "calendar" && <AuctionCalendar onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "team" && <TeamPage onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "why" && <WhyPage onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "contact" && <ContactPage onClose={() => setActivePage(null)} isDark={isDark} />}
-      {activePage === "terms" && <TermsPage onClose={() => setActivePage(null)} isDark={isDark} />}
+      <ChatButton isDark={isDark} connectedWallet={connectedWallet} currentBid={currentBid} />
     </div>
-  )
-}
-
-export default function AuctionSite() {
-  return (
-    <AuctionProvider>
-      {/* Prevent "Cannot redefine property: ethereum" errors at runtime */}
-      <EthereumFix />
-      <AuctionSiteContent />
-    </AuctionProvider>
   )
 }
