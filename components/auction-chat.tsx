@@ -40,6 +40,9 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
   const [isFullScreen, setIsFullScreen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showPinDropdown, setShowPinDropdown] = useState(false)
+  // Add state for user warnings and strikes
+  const [userWarnings, setUserWarnings] = useState<{ [key: string]: number }>({})
+  const [warningMessage, setWarningMessage] = useState("")
 
   // Mock user bid count for badge calculation
   const userBidCount = 15 // This would come from your user data
@@ -96,11 +99,36 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
 
   // Content filtering
   const filterMessage = (message: string) => {
-    const prohibitedWords = ["spam", "scam", "hack", "private key"]
+    // Get blocked words from admin panel (in real app, this would come from a shared state/API)
+    const prohibitedWords = ["spam", "scam", "hack", "private key", "phishing"] // This should come from admin panel
     const lowerMessage = message.toLowerCase()
 
     for (const word of prohibitedWords) {
       if (lowerMessage.includes(word)) {
+        // Issue warning to user
+        const currentWarnings = userWarnings[connectedWallet] || 0
+        const newWarnings = currentWarnings + 1
+
+        setUserWarnings((prev) => ({
+          ...prev,
+          [connectedWallet]: newWarnings,
+        }))
+
+        if (newWarnings >= 3) {
+          // Block user for 30 seconds on 3rd strike
+          setIsRestricted(true)
+          setRestrictionTime(30)
+          setWarningMessage("You have been temporarily restricted for violating chat rules (3 strikes).")
+        } else {
+          // Show warning message
+          setWarningMessage(
+            `Warning ${newWarnings}/3: Your message contains prohibited content. Please review the chat rules.`,
+          )
+        }
+
+        // Clear warning message after 5 seconds
+        setTimeout(() => setWarningMessage(""), 5000)
+
         return false
       }
     }
@@ -288,6 +316,12 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
 
           {/* Message Input */}
           <div className={`p-4 border-t ${isDark ? "border-white" : "border-black"}`}>
+            {warningMessage && (
+              <div className="mb-3 p-2 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 rounded-lg">
+                <p className="text-red-700 dark:text-red-300 text-xs">{warningMessage}</p>
+              </div>
+            )}
+
             <div className="flex space-x-2">
               <Input
                 value={inputMessage}
@@ -306,9 +340,13 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
                 <Send className="h-4 w-4" />
               </Button>
             </div>
+
             <div className="flex justify-between items-center mt-2">
               <span className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>
                 {inputMessage.length}/42 characters
+                {userWarnings[connectedWallet] > 0 && (
+                  <span className="ml-2 text-red-500">• Warnings: {userWarnings[connectedWallet]}/3</span>
+                )}
               </span>
               <span
                 className={`text-xs px-2 py-0.5 rounded ${

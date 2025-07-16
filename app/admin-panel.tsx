@@ -36,6 +36,71 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("7d")
   const [showDetailedChart, setShowDetailedChart] = useState<string | null>(null)
 
+  const [newBlockedWord, setNewBlockedWord] = useState("")
+  const [blockedWords, setBlockedWords] = useState(["spam", "scam", "hack", "private key", "phishing"])
+  const [selectedChatDays, setSelectedChatDays] = useState<string[]>([])
+  const [showChatDayModal, setShowChatDayModal] = useState<string | null>(null)
+
+  const chatHistory = [
+    {
+      date: "2024-01-15",
+      label: "Today",
+      messageCount: 156,
+      activeUsers: 23,
+      warnings: 2,
+    },
+    {
+      date: "2024-01-14",
+      label: "Yesterday",
+      messageCount: 203,
+      activeUsers: 31,
+      warnings: 1,
+    },
+    {
+      date: "2024-01-13",
+      label: "2 days ago",
+      messageCount: 178,
+      activeUsers: 28,
+      warnings: 0,
+    },
+    {
+      date: "2024-01-12",
+      label: "3 days ago",
+      messageCount: 145,
+      activeUsers: 19,
+      warnings: 3,
+    },
+  ]
+
+  const addBlockedWord = () => {
+    if (newBlockedWord.trim() && !blockedWords.includes(newBlockedWord.trim().toLowerCase())) {
+      setBlockedWords([...blockedWords, newBlockedWord.trim().toLowerCase()])
+      setNewBlockedWord("")
+    }
+  }
+
+  const removeBlockedWord = (word: string) => {
+    setBlockedWords(blockedWords.filter((w) => w !== word))
+  }
+
+  const toggleChatDaySelection = (date: string) => {
+    setSelectedChatDays((prev) => (prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]))
+  }
+
+  const exportSelectedChats = () => {
+    console.log("Exporting chats for dates:", selectedChatDays)
+    // Implementation for exporting selected chat days
+  }
+
+  const deleteSelectedChats = () => {
+    console.log("Deleting chats for dates:", selectedChatDays)
+    setSelectedChatDays([])
+  }
+
+  const viewChatDay = (date: string) => {
+    setShowChatDayModal(date)
+  }
+
   const timeFrames = [
     { key: "7d", label: "7 Days" },
     { key: "1m", label: "1 Month" },
@@ -632,18 +697,6 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-black dark:text-white">Chat Management</h2>
-              <div className="flex space-x-2">
-                <Button className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg">
-                  Export Chat History
-                </Button>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <Input
-                    placeholder="Search messages, users, keywords..."
-                    className="pl-10 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg"
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Chat Statistics */}
@@ -683,56 +736,99 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                 <div className="flex space-x-2 mb-4">
                   <Input
                     placeholder="Add new blocked word..."
+                    value={newBlockedWord}
+                    onChange={(e) => setNewBlockedWord(e.target.value)}
                     className="flex-1 bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white rounded-lg"
                   />
-                  <Button className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg">
+                  <Button
+                    onClick={addBlockedWord}
+                    className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 rounded-lg"
+                  >
                     Add Word
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {["spam", "scam", "hack", "private key", "phishing"].map((word) => (
-                    <Badge key={word} className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white rounded-lg">
+                  {blockedWords.map((word) => (
+                    <Badge
+                      key={word}
+                      className="bg-gray-200 dark:bg-gray-800 text-black dark:text-white rounded-lg flex items-center"
+                    >
                       {word}
-                      <button className="ml-2 text-red-500 hover:text-red-700">×</button>
+                      <button onClick={() => removeBlockedWord(word)} className="ml-2 text-red-500 hover:text-red-700">
+                        ×
+                      </button>
                     </Badge>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Recent Chat Messages */}
+            {/* Chat History */}
             <Card className="bg-white dark:bg-[#000000] border-black dark:border-white rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-black dark:text-white">Recent Messages (Last 24h)</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-black dark:text-white">Chat History (Last 7 Days)</CardTitle>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={exportSelectedChats}
+                      disabled={selectedChatDays.length === 0}
+                      className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg"
+                    >
+                      Export Chat
+                    </Button>
+                    {selectedChatDays.length > 0 && (
+                      <Button
+                        onClick={deleteSelectedChats}
+                        className="bg-red-600 text-white hover:bg-red-700 rounded-lg"
+                      >
+                        Delete Selected ({selectedChatDays.length})
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {[
-                    { user: "0x1234...5678", message: "Great artwork!", time: "2 min ago", status: "normal" },
-                    { user: "artlover.eth", message: "When does bidding end?", time: "5 min ago", status: "normal" },
-                    { user: "0x9876...4321", message: "This is spam content", time: "10 min ago", status: "flagged" },
-                  ].map((msg, index) => (
+                <div className="space-y-2">
+                  {chatHistory.map((day) => (
                     <div
-                      key={index}
-                      className={`p-3 rounded-lg ${msg.status === "flagged" ? "bg-red-100 dark:bg-red-900" : "bg-gray-50 dark:bg-gray-900"}`}
+                      key={day.date}
+                      className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                        selectedChatDays.includes(day.date)
+                          ? "bg-blue-100 dark:bg-blue-900 border-blue-500"
+                          : "bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                      onClick={() => toggleChatDaySelection(day.date)}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="font-mono text-sm font-bold text-black dark:text-white">{msg.user}</span>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{msg.message}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedChatDays.includes(day.date)}
+                            onChange={() => toggleChatDaySelection(day.date)}
+                            className="w-4 h-4"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div>
+                            <h3
+                              className="font-bold text-black dark:text-white hover:underline"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                viewChatDay(day.date)
+                              }}
+                            >
+                              {day.date} ({day.label})
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {day.messageCount} messages • {day.activeUsers} active users
+                            </p>
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{msg.time}</div>
+                        <div className="text-right">
+                          {day.warnings > 0 && (
+                            <span className="text-red-500 text-sm font-medium">{day.warnings} warnings</span>
+                          )}
+                        </div>
                       </div>
-                      {msg.status === "flagged" && (
-                        <div className="mt-2 flex space-x-2">
-                          <Button size="sm" className="bg-red-600 text-white hover:bg-red-700 rounded text-xs">
-                            Delete
-                          </Button>
-                          <Button size="sm" className="bg-yellow-600 text-white hover:bg-yellow-700 rounded text-xs">
-                            Warn User
-                          </Button>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -744,6 +840,52 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
 
       {/* Chart Modal */}
       {showDetailedChart && <ChartModal chartType={showDetailedChart} onClose={() => setShowDetailedChart(null)} />}
+
+      {/* Chat Day Modal */}
+      {showChatDayModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#000000] border border-black dark:border-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-black dark:text-white">Chat History - {showChatDayModal}</h3>
+              <Button
+                onClick={() => setShowChatDayModal(null)}
+                variant="outline"
+                className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Mock chat messages for the selected day */}
+              {[
+                { user: "0x1234...5678", message: "Great artwork!", time: "10:30 AM", flagged: false },
+                { user: "artlover.eth", message: "When does bidding end?", time: "10:35 AM", flagged: false },
+                { user: "0x9876...4321", message: "This is spam content", time: "10:40 AM", flagged: true },
+                { user: "collector.eth", message: "Amazing piece!", time: "10:45 AM", flagged: false },
+              ].map((msg, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg ${msg.flagged ? "bg-red-100 dark:bg-red-900" : "bg-gray-50 dark:bg-gray-900"}`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-mono text-sm font-bold text-black dark:text-white">{msg.user}</span>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{msg.message}</p>
+                    </div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{msg.time}</div>
+                  </div>
+                  {msg.flagged && (
+                    <div className="mt-2 text-xs text-red-600 dark:text-red-400">
+                      ⚠️ Flagged for containing blocked words
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
