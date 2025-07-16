@@ -18,7 +18,8 @@ export default function ChatButton({ isDark, connectedWallet }: ChatButtonProps)
 
   const handleChatClick = () => {
     if (!connectedWallet) {
-      // This should trigger a notification in the parent component
+      // Show notification instead of silent return
+      alert("Please connect your wallet to access chat")
       return
     }
 
