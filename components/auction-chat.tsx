@@ -41,18 +41,6 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
   const [isFullScreen, setIsFullScreen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showPinDropdown, setShowPinDropdown] = useState(false)
-  const [userWarnings, setUserWarnings] = useState<{ [key: string]: number }>({})
-  const [userRestrictions, setUserRestrictions] = useState<{ [key: string]: number }>({})
-  const [blockedWords, setBlockedWords] = useState<string[]>([
-    "spam",
-    "scam",
-    "hack",
-    "private key",
-    "phishing",
-    "fuck",
-    "shit",
-    "damn",
-  ])
 
   // Mock user bid count for badge calculation
   const userBidCount = 15 // This would come from your user data
@@ -72,13 +60,9 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => {
-      try {
-        setIsMobile(window.innerWidth < 768)
-        if (window.innerWidth < 768) {
-          setIsFullScreen(true)
-        }
-      } catch (error) {
-        console.error("Error checking mobile:", error)
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth < 768) {
+        setIsFullScreen(true)
       }
     }
     checkMobile()
@@ -124,21 +108,21 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
     return true
   }
 
-  // Enhanced content filtering with substring matching
+  // Content filtering
   const filterMessage = (message: string) => {
+    const prohibitedWords = ["spam", "scam", "hack", "private key"]
     const lowerMessage = message.toLowerCase()
 
-    // Check against blocked words (substring matching)
-    for (const word of blockedWords) {
-      if (lowerMessage.includes(word.toLowerCase())) {
-        return { allowed: false, blockedWord: word }
+    for (const word of prohibitedWords) {
+      if (lowerMessage.includes(word)) {
+        return false
       }
     }
 
-    if (message.length > 42) return { allowed: false, reason: "Message too long (42 character limit)" }
-    if (message.includes("http")) return { allowed: false, reason: "Links not allowed" }
+    if (message.length > 42) return false
+    if (message.includes("http")) return false
 
-    return { allowed: true }
+    return true
   }
 
   const handleSendMessage = () => {
@@ -157,43 +141,16 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
       return
     }
 
-    const filterResult = filterMessage(inputMessage)
-    if (!filterResult.allowed) {
-      // Increment user warnings
-      const currentWarnings = userWarnings[connectedWallet] || 0
-      const newWarnings = currentWarnings + 1
-      setUserWarnings((prev) => ({ ...prev, [connectedWallet]: newWarnings }))
-
-      // Show warning to user only (red text)
-      const warningMessage: Message = {
+    if (!filterMessage(inputMessage)) {
+      const filterMessage: Message = {
         id: Date.now().toString(),
-        user: "Warning",
-        message: `Message blocked: ${filterResult.blockedWord ? `Contains blocked word "${filterResult.blockedWord}"` : filterResult.reason}. Warning ${newWarnings}/3`,
+        user: "System",
+        message: "Message violates chat rules. Please review the guidelines.",
         timestamp: new Date(),
-        userBadge: "Warning",
+        userBadge: "System",
         badgeColor: "bg-red-500",
       }
-      setMessages((prev) => [...prev, warningMessage])
-
-      // Apply restrictions based on warnings
-      if (newWarnings >= 3) {
-        setIsRestricted(true)
-        setRestrictionTime(20) // 20 seconds for 3rd offense
-        const restrictionMessage: Message = {
-          id: Date.now().toString(),
-          user: "System",
-          message: "You have been restricted from chatting for 20 seconds due to repeated violations.",
-          timestamp: new Date(),
-          userBadge: "System",
-          badgeColor: "bg-red-500",
-        }
-        setMessages((prev) => [...prev, restrictionMessage])
-      } else if (newWarnings === 2) {
-        setIsRestricted(true)
-        setRestrictionTime(10) // 10 seconds for 2nd offense
-      }
-
-      setInputMessage("")
+      setMessages((prev) => [...prev, filterMessage])
       return
     }
 
@@ -257,14 +214,6 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
       setIsRestricted(false)
     }
   }, [restrictionTime, isRestricted])
-
-  // Fetch blocked words from localStorage or API
-  useEffect(() => {
-    const savedBlockedWords = localStorage.getItem("blockedWords")
-    if (savedBlockedWords) {
-      setBlockedWords(JSON.parse(savedBlockedWords))
-    }
-  }, [])
 
   const chatClasses =
     isFullScreen && isMobile
@@ -350,7 +299,7 @@ export default function AuctionChat({ displayName, connectedWallet, onClose, isD
             ) : (
               <div className="space-y-3">
                 {messages.map((msg) => (
-                  <div key={`${msg.id}-${msg.timestamp.getTime()}`} className="space-y-1">
+                  <div key={msg.id} className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <span
                         className={`text-sm font-medium px-2 py-1 rounded-full ${

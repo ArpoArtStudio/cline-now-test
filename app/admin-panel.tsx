@@ -37,59 +37,6 @@ interface AdminPanelProps {
   toggleTheme: () => void
 }
 
-const ChatDayModal = ({
-  date,
-  dayName,
-  onClose,
-  isDark,
-}: { date: string; dayName: string; onClose: () => void; isDark: boolean }) => {
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-[#000000] border border-black dark:border-white rounded-2xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-black dark:text-white">
-            Chat History for {date} ({dayName})
-          </h3>
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="bg-white dark:bg-[#000000] border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black rounded-lg"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Mock Chat Data */}
-        <div className="space-y-4">
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">0x1234...5678</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">14:30:15</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">Great artwork!</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">artlover.eth</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">14:32:20</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">When does bidding end?</p>
-          </div>
-
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <div className="flex justify-between items-center">
-              <div className="text-sm font-medium text-black dark:text-white">0x9876...4321</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">09:15:30</div>
-            </div>
-            <p className="text-gray-700 dark:text-gray-300">This is spam content</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState("analytics")
   const [searchTerm, setSearchTerm] = useState("")
@@ -97,15 +44,8 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
   const [showDetailedChart, setShowDetailedChart] = useState<string | null>(null)
 
   const [newBlockedWord, setNewBlockedWord] = useState("")
-  const [blockedWords, setBlockedWords] = useState(() => {
-    if (typeof window !== "undefined") {
-      const storedWords = localStorage.getItem("blockedWords")
-      return storedWords ? JSON.parse(storedWords) : ["spam", "scam", "hack", "private key", "phishing"]
-    }
-    return ["spam", "scam", "hack", "private key", "phishing"]
-  })
+  const [blockedWords, setBlockedWords] = useState(["spam", "scam", "hack", "private key", "phishing"])
   const [selectedHistoryDays, setSelectedHistoryDays] = useState<string[]>([])
-  const [selectedChatDay, setSelectedChatDay] = useState<{ date: string; dayName: string } | null>(null)
 
   // Mint form state
   const [mintForm, setMintForm] = useState({
@@ -212,17 +152,13 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
 
   const addBlockedWord = () => {
     if (newBlockedWord.trim() && !blockedWords.includes(newBlockedWord.trim().toLowerCase())) {
-      const updatedWords = [...blockedWords, newBlockedWord.trim().toLowerCase()]
-      setBlockedWords(updatedWords)
-      localStorage.setItem("blockedWords", JSON.stringify(updatedWords))
+      setBlockedWords([...blockedWords, newBlockedWord.trim().toLowerCase()])
       setNewBlockedWord("")
     }
   }
 
   const removeBlockedWord = (word: string) => {
-    const updatedWords = blockedWords.filter((w) => w !== word)
-    setBlockedWords(updatedWords)
-    localStorage.setItem("blockedWords", JSON.stringify(updatedWords))
+    setBlockedWords(blockedWords.filter((w) => w !== word))
   }
 
   const toggleHistorySelection = (date: string) => {
@@ -236,30 +172,24 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
     }
   }
 
-  const viewDayHistory = (date: string, dayName: string) => {
-    setSelectedChatDay({ date, dayName })
+  const viewDayHistory = (date: string) => {
+    alert(`Viewing chat history for ${date}`)
   }
 
-  const exportSelectedHistory = () => {
-    if (selectedHistoryDays.length === 0) {
-      alert("Please select days to export")
-      return
-    }
-
+  const exportChatHistory = () => {
     const csvContent = [
       "Date,User,Message,Timestamp,Action",
-      ...selectedHistoryDays.flatMap((date) => [
-        `${date},0x1234...5678,Great artwork!,14:30:15,normal`,
-        `${date},artlover.eth,When does bidding end?,14:32:20,normal`,
-        `${date},0x9876...4321,This is spam content,09:15:30,flagged`,
-      ]),
+      "2024-01-15,0x1234...5678,Great artwork!,14:30:15,normal",
+      "2024-01-15,artlover.eth,When does bidding end?,14:32:20,normal",
+      "2024-01-14,0x9876...4321,This is spam content,09:15:30,flagged",
+      "2024-01-14,0x5555...7777,Love this piece,10:45:12,normal",
     ].join("\n")
 
     const blob = new Blob([csvContent], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `chat-history-selected-${new Date().toISOString().split("T")[0]}.csv`
+    a.download = `chat-history-${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -1139,22 +1069,12 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-black dark:text-white">Chat Management</h2>
               <div className="flex space-x-2">
-                {selectedHistoryDays.length > 0 && (
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={exportSelectedHistory}
-                      className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg"
-                    >
-                      Export Selected ({selectedHistoryDays.length})
-                    </Button>
-                    <Button
-                      onClick={deleteSelectedHistory}
-                      className="bg-red-600 text-white hover:bg-red-700 rounded-lg"
-                    >
-                      Delete Selected ({selectedHistoryDays.length})
-                    </Button>
-                  </div>
-                )}
+                <Button
+                  onClick={exportChatHistory}
+                  className="bg-[#000000] dark:bg-white text-white dark:text-[#000000] hover:bg-gray-800 dark:hover:bg-gray-200 border-[#000000] dark:border-white rounded-lg"
+                >
+                  Export Chat History
+                </Button>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                   <Input
@@ -1260,7 +1180,7 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
                             onChange={() => toggleHistorySelection(day.date)}
                             className="w-4 h-4"
                           />
-                          <div onClick={() => viewDayHistory(day.date, day.dayName)} className="flex-1 hover:underline">
+                          <div onClick={() => viewDayHistory(day.date)} className="flex-1">
                             <div className="font-semibold text-black dark:text-white">
                               {day.date} ({day.dayName})
                             </div>
@@ -1351,14 +1271,6 @@ export default function AdminPanel({ onClose, isDark, toggleTheme }: AdminPanelP
 
       {/* Mint Confirmation Modal */}
       {showMintConfirmation && <MintConfirmationModal />}
-      {selectedChatDay && (
-        <ChatDayModal
-          date={selectedChatDay.date}
-          dayName={selectedChatDay.dayName}
-          onClose={() => setSelectedChatDay(null)}
-          isDark={isDark}
-        />
-      )}
     </div>
   )
 }
