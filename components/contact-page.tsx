@@ -3,102 +3,185 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { X, Mail, MessageCircle, Phone, MapPin, Send } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+
 interface ContactPageProps {
+  /** Closes the modal. */
   onClose: () => void
-  isDark: boolean
+  /** When true the component renders in dark mode (black background / white text). */
+  isDark?: boolean
 }
 
-export default function ContactPage({ onClose, isDark }: ContactPageProps) {
+export default function ContactPage({ onClose, isDark = false }: ContactPageProps) {
+  /* ───────────────────────── State ───────────────────────── */
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
-    message: ""
+    message: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /* ─────────────────────── Handlers ──────────────────────── */
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    setSubmitted(true)
+
+    // Simulate async submission (replace with real API call / server action)
+    await new Promise((res) => setTimeout(res, 1200))
+
     setIsSubmitting(false)
-    
-    // Reset form after 3 seconds
+    setSubmitted(true)
+
+    // Reset success state after a short delay
     setTimeout(() => {
       setSubmitted(false)
       setFormData({ name: "", email: "", subject: "", message: "" })
-    }, 3000)
+    }, 3500)
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  /* ─────────────────────── UI Helpers ────────────────────── */
+  const themed = (light: string, dark: string) => (isDark ? dark : light)
 
   const contactInfo = [
     {
-      icon: <Mail className="h-6 w-6" />,
-      title: "Email Us",
-      details: "hello@arpostudio.com",
-      description: "Get in touch for general inquiries"
+      icon: Mail,
+      label: "Email Us",
+      value: "hello@arpostudio.com",
+      description: "General enquiries",
     },
     {
-      icon: <MessageCircle className="h-6 w-6" />,
-      title: "Support",
-      details: "support@arpostudio.com",
-      description: "Technical support and platform help"
+      icon: MessageCircle,
+      label: "Support",
+      value: "support@arpostudio.com",
+      description: "Technical help",
     },
     {
-      icon: <Phone className="h-6 w-6" />,
-      title: "Business",
-      details: "partnerships@arpostudio.com",
-      description: "Partnership and business opportunities"
+      icon: Phone,
+      label: "Business",
+      value: "partnerships@arpostudio.com",
+      description: "Partnerships & opportunities",
     },
     {
-      icon: <MapPin className="h-6 w-6" />,
-      title: "Location",
-      details: "San Francisco, CA",
-      description: "Headquarters (Remote-first team)"
-    }
-  ]
+      icon: MapPin,
+      label: "Location",
+      value: "San Francisco, CA",
+      description: "Remote-first HQ",
+    },
+  ] as const
 
+  /* ───────────────────────── Render ──────────────────────── */
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`${isDark ? "bg-[#000000] border-white" : "bg-white border-black"} border rounded-2xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div
+        className={`flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border ${
+          isDark ? "border-white bg-black" : "border-black bg-white"
+        }`}
+      >
         {/* Header */}
-        <div className={`flex justify-between items-center p-6 border-b ${isDark ? "border-white" : "border-black"}`}>
-          <h2 className={`text-2xl font-bold ${isDark ? "text-white" : "text-black"}`}>Contact Us</h2>
-          <Button onClick={onClose} variant="ghost" className="p-2">
-            <X className={`h-5 w-5 ${isDark ? "text-white" : "text-black"}`} />
+        <header
+          className={`flex items-center justify-between border-b px-6 py-4 ${themed("border-black", "border-white")}`}
+        >
+          <h2 className={`text-xl font-bold ${themed("text-black", "text-white")}`}>Contact Us</h2>
+          <Button aria-label="Close contact modal" size="icon" variant="ghost" onClick={onClose}>
+            <X className={themed("text-black", "text-white")} />
           </Button>
-        </div>
+        </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Contact Form */}
-            <div>
-              <h3 className={`text-xl font-bold ${isDark ? "text-white" : "text-black"} mb-4`}>Send us a message</h3>
-              <p className={`${isDark ? "text-gray-300" : "text-gray-700"} mb-6`}>
-                Have a question, suggestion, or just want to say hello? We'd love to hear from you.
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+            {/* ─────────────── Contact Form ─────────────── */}
+            <section>
+              <h3 className={`mb-2 text-lg font-semibold ${themed("text-black", "text-white")}`}>Send us a message</h3>
+              <p className={themed("text-gray-700", "text-gray-300")}>
+                Have a question, suggestion, or just want to say hello? We’d love to hear from you.
               </p>
 
               {submitted ? (
-                <Card className={`${isDark ? "bg-green-900 border-green-600" : "bg-green-50 border-green-400"} border-2 p-6 text-center`}>
-                  <div className="text-green-600 mb-2">
-                    <Send className="h-12 w-12 mx-auto" />
+                <Card
+                  className={`mt-6 flex flex-col items-center gap-4 border-2 ${
+                    isDark ? "border-green-700 bg-green-950" : "border-green-400 bg-green-50"
+                  }`}
+                >
+                  <Send className="h-10 w-10 text-green-600" />
+                  <h4 className="text-lg font-medium text-green-700 dark:text-green-300">Message sent!</h4>
+                  <p className="text-center text-green-700 dark:text-green-300">
+                    Thank you for reaching out. We’ll get back to you within one business day.
+                  </p>
+                </Card>
+              ) : (
+                <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                  <Input
+                    name="name"
+                    placeholder="Your name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder="Your email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                  <Input
+                    name="subject"
+                    placeholder="Subject"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                  <Textarea
+                    name="message"
+                    placeholder="Message"
+                    rows={5}
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                  <Button type="submit" disabled={isSubmitting} className="w-full">
+                    {isSubmitting ? "Sending…" : "Send message"}
+                  </Button>
+                </form>
+              )}
+            </section>
+
+            {/* ─────────────── Contact Details ─────────────── */}
+            <aside className="space-y-6">
+              {contactInfo.map(({ icon: Icon, label, value, description }) => (
+                <div key={label} className="flex items-start gap-4">
+                  <div className={`rounded-md p-2 ${isDark ? "bg-white/10 text-white" : "bg-black/5 text-black"}`}>
+                    <Icon className="h-6 w-6" />
                   </div>
-                  <h4 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">Message Sent!</h4>
-                  <p className="text-green-700 dark:text-green-300">
-                    Thank you for reaching out. We'll get back to you within \
+                  <div>
+                    <p className={`font-medium ${themed("text-black", "text-white")}`}>{label}</p>
+                    <p className={themed("text-gray-800", "text-gray-300")}>{value}</p>
+                    <p className="text-sm text-gray-500">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </aside>
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
